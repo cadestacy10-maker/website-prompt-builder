@@ -1,1 +1,903 @@
-<!-- placeholder -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Website Prompt Builder</title>
+<script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+<style>
+  :root {
+    --navy: #e11d2e;
+    --navy-2: #b8162b;
+    --gold: #e11d2e;
+    --gold-2: #ff2640;
+    --bg: #000000;
+    --bg-2: #0a0a0a;
+    --card: #0d0d0d;
+    --card-2: #141414;
+    --text: #f5f5f5;
+    --muted: #9ca3af;
+    --border: #1f1f1f;
+    --border-strong: #2a2a2a;
+    --success: #10b981;
+    --danger: #ef4444;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+    --shadow: 0 4px 16px rgba(225,29,46,.08);
+    --shadow-lg: 0 12px 32px rgba(225,29,46,.18);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at top, rgba(225,29,46,.08) 0%, transparent 55%),
+      linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size: auto, 60px 60px, 60px 60px;
+    background-attachment: fixed, fixed, fixed;
+  }
+  header {
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a0608 100%);
+    color: #fff;
+    padding: 28px 24px;
+    box-shadow: var(--shadow);
+    border-bottom: 1px solid rgba(225,29,46,.25);
+    position: relative;
+  }
+  header::after { content: ""; position: absolute; bottom: -1px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(225,29,46,.6), transparent); }
+  header .wrap { max-width: 1180px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 22px; letter-spacing: -.01em; color: #fff; }
+  header .tag { color: var(--navy); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .12em; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px; }
+  header .tag::before { content: ""; width: 6px; height: 6px; background: var(--navy); border-radius: 50%; box-shadow: 0 0 8px var(--navy); }
+  header .actions { display: flex; gap: 8px; }
+  header button { background: rgba(255,255,255,.04); color: #fff; border: 1px solid rgba(255,255,255,.12); padding: 8px 14px; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; font-weight: 500; transition: all .15s; }
+  header button:hover { background: rgba(225,29,46,.15); border-color: rgba(225,29,46,.4); }
+  main { max-width: 1180px; margin: 0 auto; padding: 32px 24px 80px; display: grid; grid-template-columns: 280px 1fr; gap: 28px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } .stepnav { position: static !important; } }
+  .stepnav { position: sticky; top: 24px; align-self: start; background: var(--card); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
+  .stepnav h3 { margin: 0 0 14px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--navy); font-weight: 700; }
+  .stepnav ol { list-style: none; margin: 0; padding: 0; counter-reset: step; }
+  .stepnav li { counter-increment: step; padding: 10px 12px 10px 40px; position: relative; border-radius: var(--radius-sm); font-size: 14px; cursor: pointer; color: var(--muted); transition: all .15s; margin-bottom: 2px; }
+  .stepnav li::before { content: counter(step); position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; border-radius: 50%; background: var(--card-2); color: var(--muted); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-strong); }
+  .stepnav li.active { background: rgba(225,29,46,.08); color: #fff; font-weight: 600; }
+  .stepnav li.active::before { background: var(--navy); color: #fff; border-color: var(--navy); box-shadow: 0 0 12px rgba(225,29,46,.6); }
+  .stepnav li.done { color: var(--text); }
+  .stepnav li.done::before { background: var(--navy); color: #fff; content: "\2713"; border-color: var(--navy); }
+  .stepnav li:hover { background: rgba(225,29,46,.06); }
+  .card { background: var(--card); border-radius: var(--radius); padding: 32px; box-shadow: var(--shadow); border: 1px solid var(--border); min-height: 520px; display: flex; flex-direction: column; position: relative; }
+  .card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(225,29,46,.5), transparent); border-radius: var(--radius) var(--radius) 0 0; }
+  .card h2 { margin: 0 0 6px; font-size: 28px; letter-spacing: -.02em; color: #fff; font-weight: 800; }
+  .card .sub { color: var(--muted); margin: 0 0 28px; font-size: 15px; }
+  .card .body { flex: 1; }
+  .field { margin-bottom: 20px; }
+  .field label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; color: #fff; }
+  .field .hint { color: var(--muted); font-size: 13px; margin: 4px 0 8px; line-height: 1.4; }
+  .field input[type=text],.field input[type=url],.field input[type=email],.field input[type=number],.field select,.field textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); font-size: 14px; font-family: inherit; background: var(--card-2); color: var(--text); transition: border-color .15s, box-shadow .15s; }
+  .field input::placeholder,.field textarea::placeholder { color: #5a5a5a; }
+  .field input:focus,.field select:focus,.field textarea:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(225,29,46,.18); background: #1a1a1a; }
+  .field select option { background: var(--card-2); color: var(--text); }
+  .field textarea { min-height: 100px; resize: vertical; line-height: 1.5; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { padding: 7px 14px; border: 1px solid var(--border-strong); border-radius: 20px; background: var(--card-2); color: var(--text); font-size: 13px; cursor: pointer; transition: all .12s; user-select: none; }
+  .chip:hover { border-color: var(--navy); color: #fff; }
+  .chip.on { background: var(--navy); color: #fff; border-color: var(--navy); box-shadow: 0 0 12px rgba(225,29,46,.4); }
+  .pages-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+  .pagecard { border: 2px solid var(--border); border-radius: var(--radius-sm); padding: 14px; cursor: pointer; background: var(--card-2); transition: all .15s; position: relative; }
+  .pagecard:hover { border-color: var(--navy); transform: translateY(-1px); }
+  .pagecard.on { border-color: var(--navy); background: rgba(225,29,46,.08); box-shadow: 0 0 16px rgba(225,29,46,.2); }
+  .pagecard.on::after { content: "\2713"; position: absolute; top: 10px; right: 10px; width: 20px; height: 20px; background: var(--navy); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; }
+  .pagecard .pgname { font-weight: 700; font-size: 14px; color: #fff; margin-bottom: 4px; }
+  .pagecard .pgdesc { color: var(--muted); font-size: 12px; line-height: 1.4; }
+  .pagecard .pgsuggested { display: inline-block; margin-top: 6px; font-size: 10px; color: var(--navy); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+  .colorinput { display: flex; align-items: center; gap: 8px; }
+  .colorinput input[type=color] { width: 50px; height: 40px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); padding: 2px; cursor: pointer; background: var(--card-2); }
+  .colorinput input[type=text] { flex: 1; }
+  .dropzone { border: 2px dashed var(--border-strong); border-radius: var(--radius); padding: 32px 20px; text-align: center; cursor: pointer; transition: all .18s; background: var(--card-2); color: var(--muted); user-select: none; }
+  .dropzone:hover,.dropzone.drag-over { border-color: var(--navy); background: rgba(225,29,46,.05); color: var(--text); }
+  .dz-icon { color: var(--navy); margin-bottom: 10px; opacity: .85; }
+  .dz-title { font-weight: 700; color: #fff; font-size: 15px; margin-bottom: 4px; }
+  .dz-sub { font-size: 12px; color: var(--muted); }
+  .logo-thumbs { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .logo-thumb { position: relative; width: 84px; height: 84px; border-radius: var(--radius-sm); overflow: hidden; background: var(--card-2); border: 1px solid var(--border-strong); }
+  .logo-thumb img { width: 100%; height: 100%; object-fit: contain; padding: 6px; }
+  .logo-thumb .x { position: absolute; top: 4px; right: 4px; width: 18px; height: 18px; border-radius: 50%; background: rgba(0,0,0,.7); color: #fff; border: 1px solid rgba(255,255,255,.2); font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .15s; }
+  .logo-thumb:hover .x { opacity: 1; }
+  .palette-wrap { margin-top: 16px; background: var(--card-2); border: 1px solid var(--border); border-left: 3px solid var(--navy); border-radius: var(--radius-sm); padding: 14px; }
+  .palette-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; flex-wrap: wrap; }
+  .palette-label { font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: var(--navy); font-weight: 700; }
+  .palette-mode { display: flex; gap: 4px; background: var(--card); border-radius: 6px; padding: 3px; }
+  .mode-btn { background: transparent; border: 0; color: var(--muted); font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-family: inherit; transition: all .12s; }
+  .mode-btn.on { background: var(--navy); color: #fff; }
+  .palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
+  .swatch { aspect-ratio: 1.4; border-radius: var(--radius-sm); cursor: pointer; position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,.08); transition: transform .12s; }
+  .swatch:hover { transform: translateY(-2px); }
+  .swatch .hex { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,.65); color: #fff; font-family: monospace; font-size: 10px; text-align: center; padding: 3px 0; }
+  .swatch.assigned-primary::before { content: "P"; position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,.75); color: #fff; font-size: 9px; font-weight: 700; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .swatch.assigned-secondary::before { content: "S"; position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,.75); color: #fff; font-size: 9px; font-weight: 700; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .footer-actions { display: flex; justify-content: space-between; align-items: center; padding-top: 24px; margin-top: 24px; border-top: 1px solid var(--border); gap: 12px; }
+  .btn { padding: 11px 22px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 700; cursor: pointer; border: 1px solid transparent; transition: all .15s; font-family: inherit; }
+  .btn-primary { background: var(--navy); color: #fff; box-shadow: 0 4px 14px rgba(225,29,46,.35); }
+  .btn-primary:hover { background: var(--gold-2); transform: translateY(-1px); }
+  .btn-secondary { background: var(--card-2); color: var(--text); border-color: var(--border-strong); }
+  .btn-secondary:hover { border-color: var(--navy); color: #fff; }
+  .btn-gold { background: var(--navy); color: #fff; background-image: linear-gradient(135deg, var(--navy) 0%, var(--gold-2) 100%); box-shadow: 0 6px 24px rgba(225,29,46,.45); font-size: 15px; padding: 13px 26px; }
+  .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(225,29,46,.6); }
+  .btn-ghost { background: transparent; color: var(--muted); }
+  .btn-ghost:hover { background: rgba(225,29,46,.08); color: #fff; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+  .progress-bar { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 24px; }
+  .progress-bar > div { height: 100%; background: linear-gradient(90deg, var(--navy), var(--gold-2)); box-shadow: 0 0 12px rgba(225,29,46,.6); transition: width .25s ease; }
+  .helpbox { background: linear-gradient(135deg, rgba(225,29,46,.08) 0%, rgba(225,29,46,.03) 100%); border: 1px solid rgba(225,29,46,.25); border-left: 3px solid var(--navy); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 22px; font-size: 13px; line-height: 1.55; color: var(--text); }
+  .helpbox strong { color: var(--navy); }
+  .step { display: none; }
+  .step.active { display: block; animation: fade .22s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .preview { background: #050505; color: #e2e8f0; border-radius: var(--radius-sm); padding: 20px; font-family: monospace; font-size: 12.5px; line-height: 1.55; max-height: 480px; overflow: auto; white-space: pre-wrap; word-wrap: break-word; border: 1px solid var(--border-strong); }
+  .preview::-webkit-scrollbar { width: 10px; }
+  .preview::-webkit-scrollbar-track { background: #050505; }
+  .preview::-webkit-scrollbar-thumb { background: var(--navy); border-radius: 5px; }
+  .summary { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; }
+  @media (max-width: 600px) { .summary { grid-template-columns: 1fr; } }
+  .sumcard { background: var(--card-2); border: 1px solid var(--border); border-left: 2px solid var(--navy); padding: 14px; border-radius: var(--radius-sm); }
+  .sumcard .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .12em; color: var(--navy); font-weight: 700; margin-bottom: 4px; }
+  .sumcard .val { font-size: 14px; color: #fff; font-weight: 600; }
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--success); color: #fff; padding: 12px 18px; border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); font-weight: 600; font-size: 14px; z-index: 100; transform: translateY(120%); opacity: 0; transition: transform .3s, opacity .3s; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .badge { display: inline-block; padding: 2px 8px; font-size: 10px; font-weight: 700; background: var(--navy); color: #fff; border-radius: 10px; margin-left: 6px; text-transform: uppercase; letter-spacing: .06em; }
+  .geo-list { background: var(--card-2); border: 1px dashed var(--border-strong); padding: 12px; border-radius: var(--radius-sm); margin-top: 8px; color: var(--text); }
+  .geo-list .ghint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .preflight { margin-bottom: 20px; }
+  .pf-card { border-radius: var(--radius-sm); padding: 16px 18px; border: 1px solid var(--border); background: var(--card-2); }
+  .pf-card.ok { border-left: 3px solid var(--success); }
+  .pf-card.warn { border-left: 3px solid var(--gold-2); }
+  .pf-card.error { border-left: 3px solid var(--danger); }
+  .pf-head { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 14px; color: #fff; margin-bottom: 8px; }
+  .pf-head .pf-dot { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
+  .pf-card.ok .pf-dot { background: var(--success); color: var(--success); }
+  .pf-card.warn .pf-dot { background: var(--gold-2); color: var(--gold-2); }
+  .pf-card.error .pf-dot { background: var(--danger); color: var(--danger); }
+  .pf-msg { font-size: 13px; color: var(--muted); margin-bottom: 12px; line-height: 1.55; }
+  .pf-list { margin: 0 0 12px; padding: 0; list-style: none; max-height: 220px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; background: var(--card); }
+  .pf-list li { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 13px; gap: 10px; }
+  .pf-list li:last-child { border-bottom: 0; }
+  .pf-list .pf-field { color: var(--text); }
+  .pf-list .pf-step { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+  .pf-jump { background: transparent; color: var(--navy); border: 1px solid var(--border-strong); padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: .06em; transition: all .12s; font-family: inherit; }
+  .pf-jump:hover { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .pf-ack { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; background: var(--card); border: 1px solid var(--border-strong); border-radius: 6px; cursor: pointer; user-select: none; transition: border-color .12s; }
+  .pf-ack:hover { border-color: var(--navy); }
+  .pf-ack input[type=checkbox] { width: 18px; height: 18px; margin-top: 1px; cursor: pointer; accent-color: var(--navy); flex-shrink: 0; }
+  .pf-ack-text { font-size: 13px; line-height: 1.5; color: var(--text); }
+  .pf-ack-text strong { color: var(--navy); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div>
+      <div class="tag">Internal Tool</div>
+      <h1>Website Prompt Builder</h1>
+    </div>
+    <div class="actions">
+      <button id="saveDraft">Save Draft</button>
+      <button id="loadDraft">Load Draft</button>
+      <button id="resetAll">Start Over</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <aside class="stepnav">
+    <h3>Build Steps</h3>
+    <ol id="stepList">
+      <li data-step="1">Business Basics</li>
+      <li data-step="2">Brand Identity</li>
+      <li data-step="3">Audience &amp; Goals</li>
+      <li data-step="4">Site Architecture</li>
+      <li data-step="5">Services / Products</li>
+      <li data-step="6">SEO &amp; Compliance</li>
+      <li data-step="7">Voice &amp; Tone</li>
+      <li data-step="8">Review &amp; Generate</li>
+    </ol>
+  </aside>
+
+  <section>
+    <div class="progress-bar"><div id="progressFill" style="width:12.5%"></div></div>
+
+    <!-- STEP 1 -->
+    <div class="card step active" data-step="1">
+      <h2>Business Basics</h2>
+      <p class="sub">Tell us about the business. This anchors every page on the site.</p>
+      <div class="body">
+        <div class="field"><label>Business Name *</label><input type="text" id="businessName"></div>
+        <div class="field">
+          <label>Industry / Business Type *</label>
+          <p class="hint">Pick the closest match.</p>
+          <select id="industry">
+            <option value="">— Select —</option>
+            <option value="mortgage">Mortgage / Lending</option>
+            <option value="realestate">Real Estate</option>
+            <option value="legal">Law Firm / Legal</option>
+            <option value="medical">Medical / Dental / Healthcare</option>
+            <option value="homeservices">Home Services (HVAC, plumbing, roofing, etc.)</option>
+            <option value="autoservices">Auto Services / Repair / Dealership</option>
+            <option value="restaurant">Restaurant / Food &amp; Beverage</option>
+            <option value="fitness">Fitness / Gym / Wellness</option>
+            <option value="beauty">Beauty / Salon / Spa</option>
+            <option value="insurance">Insurance Agency</option>
+            <option value="financial">Financial Advisor / CPA</option>
+            <option value="coaching">Coaching / Consulting</option>
+            <option value="agency">Marketing / Creative Agency</option>
+            <option value="saas">SaaS / Software</option>
+            <option value="ecommerce">Ecommerce / Retail</option>
+            <option value="nonprofit">Nonprofit</option>
+            <option value="education">Education / Course Creator</option>
+            <option value="trades">Skilled Trades / Construction</option>
+            <option value="petservices">Pet Services / Veterinary</option>
+            <option value="event">Events / Weddings</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="field"><label>Tagline / One-Liner</label><input type="text" id="tagline"></div>
+        <div class="field"><label>Website Domain</label><input type="text" id="domain"></div>
+        <div class="field"><label>Brief Description *</label><p class="hint">2–4 sentences.</p><textarea id="description"></textarea></div>
+        <div class="field"><label>Owner / Founder Name</label><input type="text" id="ownerName"></div>
+        <div class="field"><label>Owner Title / Role</label><input type="text" id="ownerTitle"></div>
+        <div class="field"><label>Year Founded</label><input type="text" id="yearFounded"></div>
+        <h3 style="margin-top:36px;color:var(--navy);font-size:14px;text-transform:uppercase;letter-spacing:.14em;font-weight:700;padding-top:18px;border-top:1px solid var(--border);">— Location &amp; Service Area</h3>
+        <div class="field"><label>Office Address</label><input type="text" id="address"></div>
+        <div class="field"><label>Phone</label><input type="text" id="phone"></div>
+        <div class="field"><label>Service Reach</label>
+          <select id="reach">
+            <option value="local">Local (one city / metro)</option>
+            <option value="regional">Regional (multiple cities)</option>
+            <option value="state">Statewide</option>
+            <option value="national">National</option>
+            <option value="online">Online / Remote-only</option>
+          </select>
+        </div>
+        <div class="field"><label>Cities / Areas Served</label><p class="hint">One per line.</p><textarea id="cities"></textarea></div>
+      </div>
+      <div class="footer-actions">
+        <button class="btn btn-ghost" disabled>Back</button>
+        <button class="btn btn-primary" data-next>Continue →</button>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="card step" data-step="2">
+      <h2>Brand Identity</h2>
+      <p class="sub">Visual style and brand colors.</p>
+      <div class="body">
+        <div class="field">
+          <label>Logo Upload — Auto-Extract Brand Colors</label>
+          <p class="hint">Drop logo images here. Colors extracted automatically.</p>
+          <div class="dropzone" id="logoDropzone" tabindex="0">
+            <input type="file" id="logoInput" accept="image/*" multiple style="display:none">
+            <div class="dz-icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+            <div class="dz-title">Drop logo images here</div>
+            <div class="dz-sub">or click to browse · PNG / JPG / SVG / WebP</div>
+          </div>
+          <div id="logoThumbs" class="logo-thumbs" style="display:none;"></div>
+          <div id="paletteWrap" class="palette-wrap" style="display:none;">
+            <div class="palette-head">
+              <span class="palette-label">Extracted Colors — click to assign</span>
+              <div class="palette-mode">
+                <button type="button" class="mode-btn on" data-mode="primary">→ Primary</button>
+                <button type="button" class="mode-btn" data-mode="secondary">→ Secondary</button>
+              </div>
+            </div>
+            <div class="palette" id="palette"></div>
+          </div>
+        </div>
+        <div class="field"><label>Primary Brand Color</label><div class="colorinput"><input type="color" id="colorPrimary" value="#e11d2e"><input type="text" id="colorPrimaryHex" value="#e11d2e" placeholder="#e11d2e"></div></div>
+        <div class="field"><label>Secondary / Accent Color</label><div class="colorinput"><input type="color" id="colorSecondary" value="#000000"><input type="text" id="colorSecondaryHex" value="#000000" placeholder="#000000"></div></div>
+        <div class="field">
+          <label>Brand Personality</label>
+          <div class="chips" id="toneChips">
+            <span class="chip" data-val="Professional">Professional</span>
+            <span class="chip" data-val="Warm">Warm</span>
+            <span class="chip" data-val="Approachable">Approachable</span>
+            <span class="chip" data-val="Authoritative">Authoritative</span>
+            <span class="chip" data-val="Bold">Bold</span>
+            <span class="chip" data-val="Luxury">Luxury</span>
+            <span class="chip" data-val="Friendly">Friendly</span>
+            <span class="chip" data-val="Educational">Educational</span>
+            <span class="chip" data-val="Playful">Playful</span>
+            <span class="chip" data-val="Minimalist">Minimalist</span>
+            <span class="chip" data-val="Conversational">Conversational</span>
+            <span class="chip" data-val="Trustworthy">Trustworthy</span>
+          </div>
+        </div>
+        <div class="field"><label>Brand Voice in One Sentence</label><textarea id="voiceSentence"></textarea></div>
+        <div class="field"><label>Reference Brand (optional)</label><input type="text" id="voiceReference"></div>
+        <div class="field"><label>Image &amp; Photography Style</label>
+          <select id="imageStyle">
+            <option value="warm-natural">Warm &amp; natural — golden hour, soft, candid</option>
+            <option value="editorial-clean">Editorial &amp; clean — bright, structured, modern</option>
+            <option value="luxury-cinematic">Luxury &amp; cinematic — moody, high-end, dramatic</option>
+            <option value="bold-vibrant">Bold &amp; vibrant — saturated, energetic</option>
+            <option value="minimal-monochrome">Minimal monochrome — restrained, mostly neutral</option>
+            <option value="lifestyle-authentic">Lifestyle &amp; authentic — real people, real settings</option>
+          </select>
+        </div>
+      </div>
+      <div class="footer-actions">
+        <button class="btn btn-secondary" data-prev>← Back</button>
+        <button class="btn btn-primary" data-next>Continue →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="card step" data-step="3">
+      <h2>Audience &amp; Goals</h2>
+      <p class="sub">Who's the site for, and what's it supposed to make happen?</p>
+      <div class="body">
+        <div class="field"><label>Primary Audience *</label><p class="hint">Be specific — narrow by life stage, location, or situation.</p><textarea id="audience"></textarea></div>
+        <div class="field"><label>Pain Points / Frustrations</label><textarea id="painPoints"></textarea></div>
+        <div class="field"><label>Desired Outcome</label><textarea id="outcome"></textarea></div>
+        <div class="field"><label>Primary Site Goal</label>
+          <select id="primaryGoal">
+            <option value="leadgen">Lead generation — get people to inquire / apply</option>
+            <option value="bookings">Bookings — get people to schedule</option>
+            <option value="ecommerce">Ecommerce sales — direct purchases</option>
+            <option value="authority">Authority / education — build trust</option>
+            <option value="localseo">Local SEO ranking — show up in map pack</option>
+            <option value="awareness">Brand awareness — top-of-funnel</option>
+            <option value="hiring">Hiring / recruiting</option>
+          </select>
+        </div>
+        <div class="field"><label>Primary CTA</label>
+          <select id="ctaVerb">
+            <option value="Apply Now">Apply Now</option>
+            <option value="Get Pre-Approved">Get Pre-Approved</option>
+            <option value="Get a Quote">Get a Quote</option>
+            <option value="Book a Consultation">Book a Consultation</option>
+            <option value="Schedule a Call">Schedule a Call</option>
+            <option value="Get Started">Get Started</option>
+            <option value="Contact Us">Contact Us</option>
+            <option value="Request a Demo">Request a Demo</option>
+            <option value="Buy Now">Buy Now</option>
+            <option value="Shop">Shop</option>
+            <option value="Learn More">Learn More</option>
+            <option value="Donate">Donate</option>
+            <option value="Join the Waitlist">Join the Waitlist</option>
+            <option value="Subscribe">Subscribe</option>
+          </select>
+        </div>
+        <div class="field"><label>Secondary CTA</label><input type="text" id="ctaSecondary"></div>
+      </div>
+      <div class="footer-actions">
+        <button class="btn btn-secondary" data-prev>← Back</button>
+        <button class="btn btn-primary" data-next>Continue →</button>
+      </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="card step" data-step="4">
+      <h2>Site Architecture</h2>
+      <p class="sub">Pick the pages you want.</p>
+      <div class="body">
+        <div class="helpbox" id="pageSuggestion">Select your industry on Step 1 for page recommendations.</div>
+        <div class="field">
+          <label>Pages to Include <span id="pageCount" style="color:var(--gold);font-weight:700;">(0 selected)</span></label>
+          <div class="pages-grid" id="pagesGrid"></div>
+        </div>
+        <div class="field" id="geoBlock" style="display:none;">
+          <label>Geo Pages — One Per City</label>
+          <div class="geo-list" id="geoListShow"></div>
+        </div>
+        <div class="field"><label>Custom Pages</label><p class="hint">One per line: <em>Page Name | URL slug | Purpose</em></p><textarea id="customPages"></textarea></div>
+      </div>
+      <div class="footer-actions">
+        <button class="btn btn-secondary" data-prev>← Back</button>
+        <button class="btn btn-primary" data-next>Continue →</button>
+      </div>
+    </div>
+
+    <!-- STEP 5 -->
+    <div class="card step" data-step="5">
+      <h2>Services / Products</h2>
+      <p class="sub">List what the business sells.</p>
+      <div class="body">
+        <div class="field"><label>Services / Products</label><p class="hint">One per line: <strong>Name | Description</strong></p><textarea id="services" rows="10"></textarea></div>
+        <div class="field"><label>Featured / Flagship Offering</label><input type="text" id="featured"></div>
+        <div class="field"><label>Pricing Approach</label>
+          <select id="pricingApproach">
+            <option value="quote">Custom quote / consultation required</option>
+            <option value="public-tiers">Public pricing tiers / packages</option>
+            <option value="hourly">Hourly / project-based</option>
+            <option value="ecommerce">Per-product (ecommerce)</option>
+            <option value="subscription">Subscription / monthly</option>
+            <option value="freemium">Freemium / free tier</option>
+            <option value="not-displayed">Not displayed publicly</option>
+          </select>
+        </div>
+      </div>
+      <div class="footer-actions">
+        <button class="btn btn-secondary" data-prev>← Back</button>
+        <button class="btn btn-primary" data-next>Continue →</button>
+      </div>
+    </div>
+
+    <!-- STEP 6 -->
+    <div class="card step" data-step="6">
+      <h2>SEO &amp; Compliance</h2>
+      <p class="sub">Keywords to rank for, plus licenses or disclosures.</p>
+      <div class="body">
+        <div class="field"><label>Primary Keyword (sitewide)</label><input type="text" id="primaryKeyword"></div>
+        <div class="field"><label>Secondary Keywords</label><p class="hint">Comma-separated.</p><textarea id="secondaryKeywords"></textarea></div>
+        <div class="field"><label>Competitors (URLs)</label><textarea id="competitors"></textarea></div>
+        <div class="field"><label>Licenses, Credentials, Certifications</label><textarea id="licenses"></textarea></div>
+        <div class="field"><label>Required Disclaimers / Legal Notices</label><textarea id="disclaimers"></textarea></div>
+        <div class="field">
+          <label>Schema Markup Needs</label>
+          <div class="chips" id="schemaChips">
+            <span class="chip on" data-val="LocalBusiness">LocalBusiness</span>
+            <span class="chip on" data-val="Organization">Organization</span>
+            <span class="chip" data-val="Person">Person</span>
+            <span class="chip" data-val="FAQPage">FAQPage</span>
+            <span class="chip" data-val="Product">Product</span>
+            <span class="chip" data-val="Service">Service</span>
+            <span class="chip" data-val="Review">Review</span>
+            <span class="chip" data-val="Article">Article</span>
+            <span class="chip" data-val="Event">Event</span>
+            <span class="chip" data-val="Recipe">Recipe</span>
+            <span class="chip" data-val="MedicalBusiness">MedicalBusiness</span>
+            <span class="chip" data-val="LegalService">LegalService</span>
+          </div>
+        </div>
+      </div>
+      <div class="footer-actions">
+        <button class="btn btn-secondary" data-prev>← Back</button>
+        <button class="btn btn-primary" data-next>Continue →</button>
+      </div>
+    </div>
+
+    <!-- STEP 7 -->
+    <div class="card step" data-step="7">
+      <h2>Voice &amp; Tone Rules</h2>
+      <p class="sub">How every paragraph on the site should sound.</p>
+      <div class="body">
+        <div class="field"><label>Pronouns</label>
+          <select id="pronoun">
+            <option value="we">"We" — team voice</option>
+            <option value="i">"I" — founder voice</option>
+            <option value="mixed">Mixed — "I" on About, "we" elsewhere</option>
+          </select>
+        </div>
+        <div class="field"><label>Reading Level</label>
+          <select id="readingLevel">
+            <option value="6-8">6th–8th grade — accessible, plainspoken (Recommended)</option>
+            <option value="9-12">9th–12th grade — professional, polished</option>
+            <option value="college">College / specialist — technical, dense</option>
+          </select>
+        </div>
+        <div class="field"><label>Words / Phrases to AVOID</label><textarea id="avoidWords"></textarea></div>
+        <div class="field"><label>Words / Phrases to USE</label><textarea id="useWords"></textarea></div>
+        <div class="field"><label>Anything Else the Builder Should Know?</label><textarea id="extraNotes"></textarea></div>
+      </div>
+      <div class="footer-actions">
+        <button class="btn btn-secondary" data-prev>← Back</button>
+        <button class="btn btn-primary" data-next>Continue →</button>
+      </div>
+    </div>
+
+    <!-- STEP 8 -->
+    <div class="card step" data-step="8">
+      <h2>Review &amp; Generate</h2>
+      <p class="sub">Last check. Click Generate to produce the build brief.</p>
+      <div class="body">
+        <div class="summary" id="summary"></div>
+        <div id="preflight" class="preflight"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;">
+          <button class="btn btn-gold" id="generateBtn" disabled>⚡ Generate Build Brief</button>
+          <button class="btn btn-secondary" id="copyBtn" disabled>Copy to Clipboard</button>
+          <button class="btn btn-secondary" id="downloadBtn" disabled>Download .md</button>
+          <button class="btn btn-secondary" id="downloadPdfBtn" disabled>Download PDF</button>
+          <button class="btn btn-secondary" id="downloadDocBtn" disabled>Download Word</button>
+        </div>
+        <div id="previewWrap" style="display:none;">
+          <h3 style="margin:18px 0 10px;color:var(--navy);">Generated Build Brief Preview</h3>
+          <div class="preview" id="previewBox"></div>
+        </div>
+      </div>
+      <div class="footer-actions">
+        <button class="btn btn-secondary" data-prev>← Back</button>
+        <button class="btn btn-ghost" id="resetBtn">Start Over</button>
+      </div>
+    </div>
+
+  </section>
+</main>
+
+<div class="toast" id="toast">Saved</div>
+
+<script>
+const state={step:1,totalSteps:8,selectedPages:new Set(),tones:new Set(),schemas:new Set(["LocalBusiness","Organization"])};
+const PAGE_CATALOG=[
+  {id:"home",name:"Homepage",slug:"/",desc:"First impression. Hero, trust bar, services snapshot, social proof, CTA.",core:true},
+  {id:"about",name:"About",slug:"/about/",desc:"Founder/team bio. Trust building. E-E-A-T anchor for SEO.",core:true},
+  {id:"services",name:"Services / Products Hub",slug:"/services/",desc:"Single page listing every offering as cards with CTAs.",core:true},
+  {id:"contact",name:"Contact / Apply",slug:"/contact/",desc:"Conversion page. Form, phone, address, map, hours.",core:true},
+  {id:"reviews",name:"Reviews / Testimonials",slug:"/reviews/",desc:"Social proof. Aggregate rating, video testimonials, pull quotes."},
+  {id:"blog",name:"Blog Hub",slug:"/blog/",desc:"Content marketing. Post grid, featured post, author bio."},
+  {id:"faq",name:"FAQ",slug:"/faq/",desc:"Common questions. FAQPage schema."},
+  {id:"pricing",name:"Pricing",slug:"/pricing/",desc:"Pricing tiers, packages, what's included, FAQ."},
+  {id:"portfolio",name:"Portfolio / Case Studies",slug:"/portfolio/",desc:"Work samples or case studies."},
+  {id:"team",name:"Team",slug:"/team/",desc:"Headshots, bios, individual specialties."},
+  {id:"guide",name:"Resource Guide",slug:"/guide/",desc:"Long-form educational guide (2,000+ words)."},
+  {id:"geo",name:"Geo Pages (one per city)",slug:"/[city]/",desc:"Separate page per city. Local SEO powerhouse.",isMulti:true},
+  {id:"booking",name:"Book / Schedule",slug:"/book/",desc:"Embedded scheduler."},
+  {id:"shop",name:"Shop / Products",slug:"/shop/",desc:"Product catalog with filters and individual product pages."},
+  {id:"menu",name:"Menu",slug:"/menu/",desc:"Restaurant menu with items, photos, prices."},
+  {id:"events",name:"Events",slug:"/events/",desc:"Upcoming events list with detail pages."},
+  {id:"press",name:"Press / Media",slug:"/press/",desc:"Press releases, media kit, logos for download."},
+  {id:"careers",name:"Careers / Jobs",slug:"/careers/",desc:"Open positions, culture, benefits, application form."},
+  {id:"tools",name:"Free Tools / Calculator",slug:"/tools/",desc:"Lead magnet calculator or estimator."},
+  {id:"newsletter",name:"Newsletter Signup",slug:"/newsletter/",desc:"Standalone subscribe page."},
+  {id:"thanks",name:"Thank You / Confirmation",slug:"/thank-you/",desc:"Post-form page. Conversion tracking fires here."},
+  {id:"privacy",name:"Privacy Policy",slug:"/privacy/",desc:"Required for GDPR/CCPA compliance."},
+  {id:"terms",name:"Terms of Service",slug:"/terms/",desc:"Legal protection page."}
+];
+const IND={
+  mortgage:{core:["home","about","services","contact","reviews","blog","guide","geo"],optional:["faq","tools","privacy","terms"],helper:"Flagship guide + geo pages per city dramatically boost local SEO."},
+  realestate:{core:["home","about","services","contact","reviews","blog","geo"],optional:["portfolio","tools","faq","team"],helper:"Neighborhood geo pages and authority blog drive traffic."},
+  legal:{core:["home","about","services","contact","reviews","faq","blog"],optional:["team","guide","geo","privacy","terms"],helper:"Strong attorney bios, practice area pages, heavy FAQ."},
+  medical:{core:["home","about","services","contact","team","faq","booking"],optional:["reviews","blog","privacy","geo"],helper:"Clear service pages, doctor bios, online booking, FAQ."},
+  homeservices:{core:["home","about","services","contact","reviews","geo"],optional:["blog","faq","booking","portfolio"],helper:"90% local SEO. Geo pages per city are critical."},
+  autoservices:{core:["home","about","services","contact","reviews","geo"],optional:["booking","faq","tools"],helper:"Services hub, geo pages, online booking."},
+  restaurant:{core:["home","menu","contact","reviews","events"],optional:["about","blog","privacy"],helper:"Fast Menu page, clear hours, reservations CTA, reviews."},
+  fitness:{core:["home","about","services","pricing","contact","reviews","booking"],optional:["team","blog","faq","geo"],helper:"Pricing transparency, class schedules, trainer bios."},
+  beauty:{core:["home","about","services","pricing","contact","reviews","booking"],optional:["team","blog","portfolio"],helper:"Portfolio, team bios, transparent pricing, booking."},
+  insurance:{core:["home","about","services","contact","faq","reviews"],optional:["blog","tools","geo"],helper:"Deep FAQ + service-type pages."},
+  financial:{core:["home","about","services","contact","reviews","faq","blog"],optional:["team","tools","guide","privacy"],helper:"Thought-leadership content, transparent services, team bios."},
+  coaching:{core:["home","about","services","pricing","contact","reviews"],optional:["blog","booking","newsletter","guide"],helper:"Strong About, transparent pricing, social proof, guide."},
+  agency:{core:["home","about","services","portfolio","contact","blog"],optional:["team","reviews","pricing","careers"],helper:"Portfolio is everything. Case studies first."},
+  saas:{core:["home","services","pricing","contact","blog","faq"],optional:["about","tools","careers","privacy","terms"],helper:"Pricing + Features + Demo."},
+  ecommerce:{core:["home","shop","about","contact","reviews","faq"],optional:["blog","newsletter","privacy","terms","thanks"],helper:"Shop + Product pages + Cart."},
+  nonprofit:{core:["home","about","services","contact","reviews","blog","events"],optional:["team","careers","newsletter"],helper:"Mission, Programs, Impact, Donate CTA, Events."},
+  education:{core:["home","services","pricing","about","contact","reviews","blog"],optional:["faq","newsletter","guide","tools"],helper:"Strong About, course pages, transparent pricing, testimonials."},
+  trades:{core:["home","about","services","contact","reviews","portfolio","geo"],optional:["faq","blog","booking"],helper:"Before/after Portfolio, geo pages, reviews."},
+  petservices:{core:["home","about","services","contact","reviews","booking"],optional:["team","faq","blog","geo"],helper:"Warm About, booking, service descriptions, reviews."},
+  event:{core:["home","services","portfolio","pricing","contact","reviews"],optional:["faq","blog","team","booking"],helper:"80% Portfolio (gallery)."},
+  other:{core:["home","about","services","contact","reviews","blog"],optional:["faq","pricing","portfolio","privacy"],helper:"Standard: Home, About, Services, Reviews, Blog, Contact."}
+};
+const SCH={
+  mortgage:["LocalBusiness","Organization","Person","FAQPage","Service","Review"],
+  realestate:["LocalBusiness","Organization","Person","Service","Review"],
+  legal:["LegalService","Organization","Person","FAQPage","Review"],
+  medical:["MedicalBusiness","Organization","Person","FAQPage"],
+  homeservices:["LocalBusiness","Organization","Service","Review","FAQPage"],
+  autoservices:["LocalBusiness","Organization","Service","Review"],
+  restaurant:["LocalBusiness","Organization","Review","Recipe"],
+  fitness:["LocalBusiness","Organization","Service","Review"],
+  beauty:["LocalBusiness","Organization","Service","Review","Person"],
+  insurance:["LocalBusiness","Organization","Service","FAQPage","Review"],
+  financial:["FinancialService","Organization","Person","FAQPage","Article"],
+  coaching:["Organization","Person","Service","Review","Article"],
+  agency:["Organization","Service","Review","Article"],
+  saas:["Organization","Product","FAQPage","Article","Review"],
+  ecommerce:["Organization","Product","Review","FAQPage"],
+  nonprofit:["Organization","Event","Article"],
+  education:["Organization","Course","Person","Review","Article"],
+  trades:["LocalBusiness","Organization","Service","Review","FAQPage"],
+  petservices:["LocalBusiness","Organization","Service","Review"],
+  event:["LocalBusiness","Organization","Event","Review","Service"],
+  other:["Organization","LocalBusiness"]
+};
+function esc(s){if(!s&&s!==0)return"";return String(s).replace(/[&<>"']/g,c=({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);}
+function slug(s){return s.toLowerCase().replace(/[^\w\s-]/g,"").trim().replace(/\s+/g,"-");}
+function buildPageCards(ind){
+  const grid=document.getElementById("pagesGrid");grid.innerHTML="";
+  const sug=IND[ind]||IND.other;
+  const suggested=new Set(sug.core);const optional=new Set(sug.optional||[]);
+  document.getElementById("pageSuggestion").innerHTML="<strong>Recommendation:</strong> "+(sug.helper||"");
+  PAGE_CATALOG.forEach(p=>{
+    const isSug=suggested.has(p.id),isOpt=optional.has(p.id);
+    const div=document.createElement("div");
+    div.className="pagecard"+(state.selectedPages.has(p.id)?" on":"");div.dataset.id=p.id;
+    div.innerHTML='<div class="pgname">'+esc(p.name)+(isSug?'<span class="badge">Recommended</span>':'')+'</div><div class="pgdesc">'+esc(p.desc)+'</div><div style="font-size:11px;color:var(--muted);margin-top:6px;font-family:monospace;">'+esc(p.slug)+'</div>'+(isSug?'<span class="pgsuggested">★ Suggested</span>':(isOpt?'<span class="pgsuggested" style="color:var(--muted);">+ Optional</span>':''));
+    div.addEventListener("click",()=>{togglePage(p.id,div);});grid.appendChild(div);
+    if(isSug&&!state.selectedPages.has(p.id)){state.selectedPages.add(p.id);div.classList.add("on");}
+  });
+  updatePageCount();updateGeoBlock();
+  state.schemas=new Set(SCH[ind]||SCH.other);
+  document.querySelectorAll("#schemaChips .chip").forEach(c=>c.classList.toggle("on",state.schemas.has(c.dataset.val)));
+}
+function togglePage(id,el){state.selectedPages.has(id)?state.selectedPages.delete(id):state.selectedPages.add(id);el.classList.toggle("on");updatePageCount();updateGeoBlock();}
+function updatePageCount(){document.getElementById("pageCount").textContent="("+state.selectedPages.size+" selected)";}
+function updateGeoBlock(){
+  const geoEl=document.getElementById("geoBlock");
+  const cities=(document.getElementById("cities").value||"").split("\n").map(s=>s.trim()).filter(Boolean);
+  if(state.selectedPages.has("geo")&&cities.length){
+    geoEl.style.display="block";
+    document.getElementById("geoListShow").innerHTML="<strong>"+cities.length+" geo pages:</strong><br>"+cities.map(c=>"→ /"+slug(c)+"/").join("<br>")+'<div class="ghint">Cities from Step 1.</div>';
+  }else{geoEl.style.display="none";}
+}
+function showStep(n){
+  document.querySelectorAll(".step").forEach(s=>s.classList.remove("active"));
+  const t=document.querySelector('.step[data-step="'+n+'"]');if(t)t.classList.add("active");
+  state.step=n;document.getElementById("progressFill").style.width=(n/state.totalSteps*100)+"%";
+  document.querySelectorAll("#stepList li").forEach(li=>{const s=parseInt(li.dataset.step);li.classList.remove("active","done");if(s===n)li.classList.add("active");else if(s<n)li.classList.add("done");});
+  if(n===4)buildPageCards(document.getElementById("industry").value||"other");
+  if(n===8){renderSummary();renderPreflight();}
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+document.querySelectorAll("[data-next]").forEach(b=>b.addEventListener("click",()=>{if(state.step<state.totalSteps)showStep(state.step+1);saveDraft(true);}));
+document.querySelectorAll("[data-prev]").forEach(b=>b.addEventListener("click",()=>{if(state.step>1)showStep(state.step-1);}));
+document.querySelectorAll("#stepList li").forEach(li=>li.addEventListener("click",()=>showStep(parseInt(li.dataset.step))));
+document.querySelectorAll("#toneChips .chip").forEach(c=>c.addEventListener("click",()=>{const v=c.dataset.val;state.tones.has(v)?state.tones.delete(v):state.tones.add(v);c.classList.toggle("on");}));
+document.querySelectorAll("#schemaChips .chip").forEach(c=>c.addEventListener("click",()=>{const v=c.dataset.val;state.schemas.has(v)?state.schemas.delete(v):state.schemas.add(v);c.classList.toggle("on");}));
+function linkColor(p,h){const pi=document.getElementById(p),hi=document.getElementById(h);pi.addEventListener("input",()=>hi.value=pi.value);hi.addEventListener("input",()=>{if(/^#[0-9a-f]{6}$/i.test(hi.value))pi.value=hi.value;});}
+linkColor("colorPrimary","colorPrimaryHex");linkColor("colorSecondary","colorSecondaryHex");
+const LS={files:[],mergedPalette:[],mode:"primary",assignedPrimary:null,assignedSecondary:null};
+const dz=document.getElementById("logoDropzone"),li=document.getElementById("logoInput"),th=document.getElementById("logoThumbs"),pw=document.getElementById("paletteWrap"),pe=document.getElementById("palette");
+dz.addEventListener("click",()=>li.click());dz.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();li.click();}});
+["dragenter","dragover"].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();dz.classList.add("drag-over");}));
+["dragleave","drop"].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();dz.classList.remove("drag-over");}));
+dz.addEventListener("drop",e=>handleFiles(e.dataTransfer.files));li.addEventListener("change",e=>{handleFiles(e.target.files);li.value="";});
+function handleFiles(fl){const files=Array.from(fl||[]).filter(f=>f.type.startsWith("image/"));if(!files.length){toast("Image files only",true);return;}files.forEach(f=>readAndExtract(f));}
+function readAndExtract(file){const r=new FileReader();r.onload=e=>{const d=e.target.result;const img=new Image();img.crossOrigin="anonymous";img.onload=()=>{const cols=extractColors(img,12);const id="l_"+Date.now();LS.files.push({id,name:file.name,dataUrl:d,colors:cols});rebuildPalette();renderThumbs();renderPalette();toast("Extracted "+cols.length+" colors from "+file.name);};img.onerror=()=>toast("Couldn't read "+file.name,true);img.src=d;};r.readAsDataURL(file);}
+function extractColors(imgEl,maxC){const cv=document.createElement("canvas"),ctx=cv.getContext("2d"),mx=120;const ratio=Math.min(mx/(imgEl.naturalWidth||mx),mx/(imgEl.naturalHeight||mx),1);cv.width=Math.max(1,Math.floor((imgEl.naturalWidth||mx)*ratio));cv.height=Math.max(1,Math.floor((imgEl.naturalHeight||mx)*ratio));try{ctx.drawImage(imgEl,0,0,cv.width,cv.height);}catch(e){return[];}let data;try{data=ctx.getImageData(0,0,cv.width,cv.height).data;}catch(e){return[];}const buckets=new Map();for(let i=0;i<data.length;i+=4){const r=data[i],g=data[i+1],b=data[i+2],a=data[i+3];if(a<200)continue;const br=(r+g+b)/3;if(br>245||br<12)continue;const key=((r>>3)<<3<<16)|((g>>3)<<3<<8)|((b>>3)<<3);buckets.set(key,(buckets.get(key)||0)+1);}if(!buckets.size)return[];const sorted=[...buckets.entries()].sort((a,b)=>b[1]-a[1]);const picked=[];for(const[key]of sorted){const r=(key>>16)&0xff,g=(key>>8)&0xff,b=key&0xff;const tc=picked.some(p=>{const dr=p.r-r,dg=p.g-g,db=p.b-b;return Math.sqrt(dr*dr+dg*dg+db*db)<48;});if(!tc)picked.push({r,g,b});if(picked.length>=maxC)break;}return picked.map(c=>"#"+[c.r,c.g,c.b].map(x=>x.toString(16).padStart(2,"0")).join(""));}
+function h2r(hex){hex=hex.replace("#","");return[parseInt(hex.slice(0,2),16),parseInt(hex.slice(2,4),16),parseInt(hex.slice(4,6),16)];}
+function rebuildPalette(){const all=[];LS.files.forEach(f=>f.colors.forEach((hex,i)=>all.push({hex,w:f.colors.length-i})));const merged=[];all.sort((a,b)=>b.w-a.w);for(const c of all){const[r,g,b]=h2r(c.hex);const dup=merged.find(m=>{const[mr,mg,mb]=h2r(m.hex);const dr=mr-r,dg=mg-g,db=mb-b;return Math.sqrt(dr*dr+dg*dg+db*db)<36;});if(!dup)merged.push(c);if(merged.length>=16)break;}LS.mergedPalette=merged;}
+function renderThumbs(){if(!LS.files.length){th.style.display="none";th.innerHTML="";return;}th.style.display="flex";th.innerHTML=LS.files.map(f=>'<div class="logo-thumb"><img src="'+f.dataUrl+'" alt="'+esc(f.name)+'"><div class="x" data-remove="'+f.id+'">×</div></div>').join("");th.querySelectorAll("[data-remove]").forEach(el=>el.addEventListener("click",e=>{e.stopPropagation();LS.files=LS.files.filter(f=>f.id!==el.dataset.remove);rebuildPalette();renderThumbs();renderPalette();}));}
+function renderPalette(){if(!LS.mergedPalette.length){pw.style.display="none";pe.innerHTML="";return;}pw.style.display="block";pe.innerHTML=LS.mergedPalette.map(c=>'<div class="swatch'+(LS.assignedPrimary===c.hex?" assigned-primary":"")+(LS.assignedSecondary===c.hex?" assigned-secondary":"")+'" data-hex="'+c.hex+'" style="background:'+c.hex+'"><div class="hex">'+c.hex.toUpperCase()+'</div></div>').join("");pe.querySelectorAll(".swatch").forEach(sw=>sw.addEventListener("click",()=>assignSwatch(sw.dataset.hex)));}
+function assignSwatch(hex){if(LS.mode==="primary"){LS.assignedPrimary=hex;document.getElementById("colorPrimary").value=hex;document.getElementById("colorPrimaryHex").value=hex;if(!LS.assignedSecondary)setMode("secondary");toast("Primary set to "+hex.toUpperCase());}else{LS.assignedSecondary=hex;document.getElementById("colorSecondary").value=hex;document.getElementById("colorSecondaryHex").value=hex;toast("Secondary set to "+hex.toUpperCase());}renderPalette();}
+function setMode(m){LS.mode=m;document.querySelectorAll(".mode-btn").forEach(b=>b.classList.toggle("on",b.dataset.mode===m));}
+document.querySelectorAll(".mode-btn").forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mode)));
+document.getElementById("industry").addEventListener("change",e=>{state.selectedPages.clear();if(state.step===4)buildPageCards(e.target.value||"other");});
+document.getElementById("cities").addEventListener("input",updateGeoBlock);
+const DK="wpb_draft_v1";
+function collectFormData(){const d={};document.querySelectorAll("input,textarea,select").forEach(el=>{if(!el.id)return;if(el.type==="checkbox")d[el.id]=el.checked;else d[el.id]=el.value;});d._tones=[...state.tones];d._schemas=[...state.schemas];d._pages=[...state.selectedPages];return d;}
+function applyFormData(d){Object.entries(d).forEach(([k,v])=>{if(k.startsWith("_"))return;const el=document.getElementById(k);if(!el)return;if(el.type==="checkbox")el.checked=!!v;else el.value=v;});state.tones=new Set(d._tones||[]);state.schemas=new Set(d._schemas||["LocalBusiness","Organization"]);state.selectedPages=new Set(d._pages||[]);document.querySelectorAll("#toneChips .chip").forEach(c=>c.classList.toggle("on",state.tones.has(c.dataset.val)));document.querySelectorAll("#schemaChips .chip").forEach(c=>c.classList.toggle("on",state.schemas.has(c.dataset.val)));}
+function saveDraft(silent){try{localStorage.setItem(DK,JSON.stringify(collectFormData()));if(!silent)toast("Draft saved");}catch(e){}}
+function loadDraft(){try{const d=localStorage.getItem(DK);if(!d){toast("No saved draft",true);return;}applyFormData(JSON.parse(d));toast("Draft loaded");}catch(e){}}
+document.getElementById("saveDraft").addEventListener("click",()=>saveDraft(false));
+document.getElementById("loadDraft").addEventListener("click",loadDraft);
+document.getElementById("resetAll").addEventListener("click",()=>{if(confirm("Clear everything and start over?")){localStorage.removeItem(DK);location.reload();}});
+document.getElementById("resetBtn").addEventListener("click",()=>{if(confirm("Clear everything and start over?")){localStorage.removeItem(DK);location.reload();}});
+function toast(msg,isErr){const t=document.getElementById("toast");t.textContent=msg;t.style.background=isErr?"var(--danger)":"var(--success)";t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1800);}
+function renderSummary(){const f=collectFormData();const cities=(f.cities||"").split("\n").map(s=>s.trim()).filter(Boolean);const srvs=(f.services||"").split("\n").map(s=>s.trim()).filter(Boolean);const cells=[["Business",f.businessName||"—"],["Industry",f.industry||"—"],["Domain",f.domain||"—"],["Owner",f.ownerName||"—"],["Service Area",cities.length?cities.join(", "):(f.reach||"—")],["Pages",[...state.selectedPages].length+" selected"],["Geo Pages",state.selectedPages.has("geo")?cities.length+" cities":"none"],["Services",srvs.length+" items"],["Primary Goal",f.primaryGoal||"—"],["Primary CTA",f.ctaVerb||"—"],["Tone",[...state.tones].join(", ")||"—"],["Primary Keyword",f.primaryKeyword||"—"]];document.getElementById("summary").innerHTML=cells.map(([k,v])=>'<div class="sumcard"><div class="lbl">'+esc(k)+'</div><div class="val">'+esc(v)+'</div></div>').join("");}
+const FM=[
+  {id:"businessName",label:"Business Name",step:1,type:"text",critical:true},
+  {id:"industry",label:"Industry",step:1,type:"select",critical:true},
+  {id:"_pages",label:"Pages Selected",step:4,type:"pages",critical:true},
+  {id:"tagline",label:"Tagline / One-Liner",step:1,type:"text"},
+  {id:"domain",label:"Website Domain",step:1,type:"text"},
+  {id:"description",label:"Brief Description",step:1,type:"text"},
+  {id:"ownerName",label:"Owner / Founder Name",step:1,type:"text"},
+  {id:"audience",label:"Primary Audience",step:3,type:"text"},
+  {id:"services",label:"Services / Products",step:5,type:"text"},
+  {id:"primaryKeyword",label:"Primary Keyword",step:6,type:"text"},
+  {id:"_tones",label:"Brand Personality",step:2,type:"chips"},
+  {id:"voiceSentence",label:"Brand Voice in One Sentence",step:2,type:"text"}
+];
+const SL={1:"Business Basics",2:"Brand Identity",3:"Audience & Goals",4:"Site Architecture",5:"Services / Products",6:"SEO & Compliance",7:"Voice & Tone"};
+function fieldEmpty(f){if(f.type==="chips"&&f.id==="_tones")return state.tones.size===0;if(f.type==="pages")return state.selectedPages.size===0;const el=document.getElementById(f.id);if(!el)return true;return(el.value||"").trim()==="";}
+function getMissing(){return FM.filter(fieldEmpty);}
+function getCritical(){return getMissing().filter(f=>f.critical);}
+function renderPreflight(){
+  const missing=getMissing();const critical=missing.filter(f=>f.critical);const optional=missing.filter(f=>!f.critical);const wrap=document.getElementById("preflight");
+  if(!missing.length){wrap.innerHTML='<div class="pf-card ok"><div class="pf-head"><span class="pf-dot"></span>Pre-Flight Check — All Clear</div><div class="pf-msg">Every required field is filled. Click Generate.</div></div>';setGen(true);return;}
+  let html="";
+  if(critical.length)html+='<div class="pf-card error"><div class="pf-head"><span class="pf-dot"></span>'+critical.length+' Required Field'+(critical.length===1?"":"s")+' Missing</div><div class="pf-msg">Fill these in before generating.</div>'+renderFL(critical)+'</div>';
+  if(optional.length)html+=(critical.length?'<div style="height:10px"></div>':'')+'<div class="pf-card warn"><div class="pf-head"><span class="pf-dot"></span>'+optional.length+' Optional Field'+(optional.length===1?"":"s")+' Empty</div><div class="pf-msg">Brief generates with placeholders in these areas.</div>'+renderFL(optional)+'<label class="pf-ack"><input type="checkbox" id="ackBlank"><span class="pf-ack-text">I\'ve <strong>reviewed the empty fields</strong> and want to generate anyway.</span></label></div>';
+  wrap.innerHTML=html;
+  wrap.querySelectorAll(".pf-jump").forEach(btn=>btn.addEventListener("click",()=>{const step=parseInt(btn.dataset.step);const tid=btn.dataset.target;showStep(step);setTimeout(()=>{const el=document.getElementById(tid);if(el&&el.focus){el.focus();if(el.scrollIntoView)el.scrollIntoView({behavior:"smooth",block:"center"});}},240);}));
+  const ack=document.getElementById("ackBlank");if(ack)ack.addEventListener("change",()=>setGen(critical.length===0&&(optional.length===0||ack.checked)));
+  setGen(critical.length===0&&optional.length===0);
+}
+function renderFL(fields){let h='<ul class="pf-list">';fields.forEach(f=>{h+='<li><div><div class="pf-field">'+esc(f.label)+(f.critical?'<span class="badge">Required</span>':'')+'</div><div class="pf-step">Step '+f.step+' — '+esc(SL[f.step]||"")+'</div></div><button type="button" class="pf-jump" data-step="'+f.step+'" data-target="'+esc(f.id)+'">Jump →</button></li>';});return h+'</ul>';}
+function setGen(enabled){const btn=document.getElementById("generateBtn");if(btn)btn.disabled=!enabled;}
+function rCat(ind){return({mortgage:"Mortgage Lender",realestate:"Real Estate Agent",legal:"Law Firm",medical:"Medical / Dental Practice",homeservices:"Home Services Contractor",autoservices:"Auto Services",restaurant:"Restaurant",fitness:"Gym / Fitness Center",beauty:"Beauty Salon / Spa",insurance:"Insurance Agency",financial:"Financial Service",coaching:"Consultant / Coach",agency:"Marketing Agency",saas:"Software Company",ecommerce:"Retail Store",nonprofit:"Nonprofit Organization",education:"Education / Training",trades:"General Contractor",petservices:"Pet Service",event:"Event Planner"})[ind]||"Local Business";}
+function rGoal(g){return({leadgen:"Generate inbound leads",bookings:"Drive bookings / appointments",ecommerce:"Drive online product sales",authority:"Build authority through content",localseo:"Rank in local search",awareness:"Build brand awareness",hiring:"Attract job applicants"})[g]||g;}
+function rReach(r){return({local:"Local market",regional:"Regional",state:"Statewide",national:"National",online:"Online / Remote-only"})[r]||r;}
+function rImg(s){return({
+  "warm-natural":"Warm and natural — golden hour, soft, candid",
+  "editorial-clean":"Editorial and clean — bright, structured, modern",
+  "luxury-cinematic":"Luxury and cinematic — moody, high-end, dramatic",
+  "bold-vibrant":"Bold and vibrant — saturated, energetic",
+  "minimal-monochrome":"Minimal monochrome — restrained, mostly neutral",
+  "lifestyle-authentic":"Lifestyle and authentic — real people in real settings"
+})[s]||s;}
+function rPronoun(p){return({we:"First-person plural ('we')",i:"First-person singular ('I')",mixed:"Mixed"})[p]||p;}
+function rLevel(r){return({"6-8":"6th–8th grade — accessible","9-12":"9th–12th grade — professional",college:"College / specialist"})[r]||r;}
+function pKw(p,primary,cities){
+  if(p.id==="geo"&&p.city)return primary.split(" ")[0]+" "+p.city;
+  if(p.id==="home")return primary;
+  if(p.id==="about")return(primary.split(" ")[0]||"service")+" expert "+(cities[0]||"");
+  if(p.id==="services")return"services "+(cities[0]||"");
+  if(p.id==="contact")return primary+" near me";
+  return primary;
+}
+function pIntent(p){return({home:"Transactional",about:"Navigational",services:"Commercial",contact:"Transactional",reviews:"Navigational",blog:"Informational",faq:"Informational",pricing:"Commercial",portfolio:"Commercial",geo:"Transactional",booking:"Transactional"})[p.id]||"Navigational";}
+function schWhere(s){return({LocalBusiness:" on all pages",Organization:" on all pages",Person:" on About and Team pages",FAQPage:" on FAQ sections",Service:" on service pages",Review:" on Reviews page",Article:" on every blog post"})[s]||"";}
+
+let lastBrief="";
+function generateBrief(){
+  const f=collectFormData();
+  const bn=f.businessName||"[Business Name]";
+  const ind=f.industry||"other";
+  const dom=(f.domain||"").replace(/^https?:\/\//,"");
+  const cities=(f.cities||"").split("\n").map(s=>s.trim()).filter(Boolean);
+  const cp=(f.colorPrimaryHex||f.colorPrimary||"#e11d2e");
+  const cs=(f.colorSecondaryHex||f.colorSecondary||"#000000");
+  const tones=[...state.tones];
+  const services=(f.services||"").split("\n").map(s=>s.trim()).filter(Boolean).map(line=>{const p=line.split("|").map(x=>x.trim());return{name:p[0]||"",desc:p[1]||""};});
+  const pKw1=f.primaryKeyword||(ind+" "+(cities[0]||""));
+  const schemas=[...state.schemas];
+  const licenses=(f.licenses||"").split("\n").map(s=>s.trim()).filter(Boolean);
+  const disclaimers=(f.disclaimers||"").split("\n").map(s=>s.trim()).filter(Boolean);
+  const competitors=(f.competitors||"").split("\n").map(s=>s.trim()).filter(Boolean);
+  const customPagesRaw=(f.customPages||"").split("\n").map(s=>s.trim()).filter(Boolean);
+  const customPages=customPagesRaw.map(line=>{const p=line.split("|").map(x=>x.trim());return{name:p[0]||"Custom Page",slug:p[1]||"/"+slug(p[0]||"page")+"/",purpose:p[2]||""};});
+  const orderedIds=["home","about","services","menu","shop","portfolio","pricing","reviews","team","tools","guide","faq","blog","events","press","careers","booking","newsletter","contact","thanks","privacy","terms"];
+  const pageList=[];
+  orderedIds.forEach(id=>{if(!state.selectedPages.has(id)||id==="geo")return;const p=PAGE_CATALOG.find(x=>x.id===id);if(p)pageList.push({id:p.id,name:p.name,slug:p.slug});});
+  if(state.selectedPages.has("geo")&&cities.length)cities.forEach(c=>pageList.push({id:"geo",name:bn.split(" ")[0]+" in "+c,slug:"/"+slug(c)+"/",city:c}));
+  customPages.forEach(c=>pageList.push({id:"custom",name:c.name,slug:c.slug,purpose:c.purpose}));
+
+  let md="# WEBSITE BUILD BRIEF: "+bn.toUpperCase()+"\n\n";
+  md+="## PROJECT OVERVIEW\n\n";
+  md+=pageList.length+"-page website for **"+bn+"**"+(f.tagline?" — "+f.tagline:"")+", "+rCat(ind).toLowerCase()+(cities.length?" in "+cities[0]:"")+".";
+  if(f.description)md+=" "+f.description;
+  md+="\n\n";
+  if(f.ownerName)md+="**Owner:** "+f.ownerName+(f.ownerTitle?" — "+f.ownerTitle:"")+"\n";
+  if(f.address)md+="**Address:** "+f.address+"\n";
+  if(f.phone)md+="**Phone:** "+f.phone+"\n";
+  if(cities.length)md+="**Service Area:** "+cities.join(", ")+"\n";else md+="**Reach:** "+rReach(f.reach||"local")+"\n";
+  if(dom)md+="**Domain:** "+dom+"\n";
+  if(f.yearFounded)md+="**Founded:** "+f.yearFounded+"\n";
+  if(licenses.length)md+="**Licenses:** "+licenses.join(" · ")+"\n";
+  md+="\n**Goal:** "+rGoal(f.primaryGoal||"leadgen")+".\n";
+  if(f.audience)md+="**Target Audience:** "+f.audience.replace(/\n/g," ").trim()+"\n";
+  md+="\n";
+  if(f.audience||f.painPoints||f.outcome){
+    md+="---\n\n## TARGET AUDIENCE\n\n";
+    if(f.audience)md+="**Who they are:** "+f.audience+"\n\n";
+    if(f.painPoints)md+="**Pain points:** "+f.painPoints+"\n\n";
+    if(f.outcome)md+="**Desired outcome:** "+f.outcome+"\n\n";
+  }
+  md+="---\n\n## SITE ARCHITECTURE — "+pageList.length+" PAGES\n\n";
+  md+="| # | Page Name | URL Slug | Primary SEO Keyword |\n|---|-----------|----------|---------------------|\n";
+  pageList.forEach((p,i)=>{md+="| "+(i+1)+" | "+p.name+" | "+p.slug+" | "+pKw(p,pKw1,cities)+" |\n";});
+  md+="\n---\n\n## GLOBAL DESIGN & TECHNICAL STANDARDS\n\n";
+  md+="### Branding\n- **Primary color:** "+cp+"\n- **Secondary color:** "+cs+"\n";
+  if(tones.length)md+="- **Brand personality:** "+tones.join(", ")+"\n";
+  if(f.voiceSentence)md+="- **Voice:** "+f.voiceSentence+"\n";
+  if(f.voiceReference)md+="- **Reference brand:** "+f.voiceReference+"\n";
+  md+="- **Photography:** "+rImg(f.imageStyle||"warm-natural")+"\n\n";
+  md+="### Performance\n- LCP < 2.5s, CLS < 0.1, INP < 200ms. Mobile-first. SSL, XML sitemap, canonical tags.\n\n";
+  if(schemas.length){md+="### Schema Markup (Required)\n";schemas.forEach(s=>{md+="- `"+s+"` schema"+schWhere(s)+"\n";});md+="\n";}
+  if(licenses.length||disclaimers.length){md+="### Legal / Compliance\n";licenses.forEach(l=>md+="- "+l+" — footer every page\n");disclaimers.forEach(d=>md+="- "+d+"\n");md+="\n";}
+  md+="---\n\n## PAGE-BY-PAGE SPECIFICATIONS\n\n";
+  pageList.forEach((p,i)=>{
+    md+="---\n\n### PAGE "+(i+1)+": "+p.name.toUpperCase()+"\n";
+    md+="**URL:** "+(dom||"[domain]")+p.slug+"\n";
+    md+="**Primary Keyword:** "+pKw(p,pKw1,cities)+"\n";
+    md+="**Search Intent:** "+pIntent(p)+"\n\n";
+    md+=pageSpec(p,{...f,services,licenses,disclaimers,cities,tones,schemas,primaryKeyword:pKw1,colorPrimary:cp,colorSecondary:cs});
+    md+="\n\n";
+  });
+  md+="---\n\n## KEYWORD CLUSTER MAP\n\n";
+  md+="| Page | Primary Keyword | Intent |\n|------|-----------------|--------|\n";
+  pageList.forEach(p=>{md+="| "+p.name+" | "+pKw(p,pKw1,cities)+" | "+pIntent(p)+" |\n";});
+  md+="\n";
+  if(f.secondaryKeywords)md+="**Secondary keywords:** "+f.secondaryKeywords+"\n\n";
+  md+="---\n\n## COPY VOICE & TONE GUIDE\n\n";
+  if(f.voiceSentence)md+="**Voice statement:** "+f.voiceSentence+"\n\n";
+  md+="- **Pronouns:** "+rPronoun(f.pronoun||"we")+"\n";
+  md+="- **Reading level:** "+rLevel(f.readingLevel||"6-8")+"\n";
+  if(tones.length)md+="- **Brand personality:** "+tones.join(", ")+"\n";
+  if(f.avoidWords)md+="- **Avoid:** "+f.avoidWords+"\n";
+  if(f.useWords)md+="- **Use:** "+f.useWords+"\n";
+  md+="- **Primary CTA:** \""+f.ctaVerb+"\""+(f.ctaSecondary?" / \""+f.ctaSecondary+"\"":"")+"\n\n";
+  if(f.extraNotes)md+="**Additional notes:** "+f.extraNotes+"\n\n";
+  if(competitors.length){md+="---\n\n## COMPETITORS\n\n";competitors.forEach(c=>md+="- "+c+"\n");md+="\nMake copy more specific, local, and human than these.\n\n";}
+  md+="---\n\n## FOOTER REQUIREMENTS (All Pages)\n\n- Business name: "+bn+"\n";
+  if(f.address)md+="- Address: "+f.address+"\n";
+  if(f.phone)md+="- Phone: "+f.phone+"\n";
+  licenses.forEach(l=>md+="- "+l+"\n");
+  disclaimers.forEach(d=>md+="- "+d+"\n");
+  if(ind==="mortgage")md+="- Equal Housing Opportunity logo\n";
+  md+="\n---\n\n## CONVERSION TRACKING\n\nInstall via GTM. Required: GA4, Google Ads, Meta Pixel. Fire `lead_form_submit` on /thank-you/ page load. Track phone clicks, email clicks.\n\n";
+  return md;
+}
+
+function pageSpec(p,c){
+  const cta=c.ctaVerb||"Get Started";
+  const owner=c.ownerName||"the team";
+  switch(p.id){
+    case"home":return"**Sections:**\n1. **Hero** — Full-width. H1 contains \""+c.primaryKeyword+"\". Subheadline names the audience's biggest pain point. Primary CTA button → /contact/. Secondary CTA: phone number link.\n2. **Trust Bar** — 4–5 credential metrics: years in business, clients/transactions, cities served, license, 5-star reviews.\n3. **Services Snapshot** — 3-column grid. Each card: icon, 2–3 word name, 1-sentence description, CTA.\n4. **Process / How It Works** — 4 numbered steps. Discovery → Plan → Execute → Outcome.\n5. **Testimonials Teaser** — 3 pull quotes with star ratings, first name, city.\n6. **About Teaser** — Headshot + 75-word intro for "+owner+" with link → /about/.\n7. **Footer CTA Band** — Brand-color section, big headline, one CTA, phone.\n\n**Schema:** Organization + LocalBusiness + Person + Review + WebSite.";
+    case"about":return"**Sections:**\n1. **Bio Header** — 2-column. Editorial portrait left. 300-word bio right: hook → origin → approach → local connection → promise.\n2. **Personal Side** — Casual photo + 100-word lifestyle copy to humanize the owner.\n3. **Working Philosophy** — 4 sub-sections: plain language / full attention / honest answers / follow-through.\n4. **Credentials Section** — "+((c.licenses&&c.licenses.length)?c.licenses.join(", "):"Licenses, certifications, associations, years of experience")+"\n5. **Values** — 3 specific, non-generic values (e.g., 'plain language' not 'integrity').\n6. **Customer Voices** — 2 testimonials specifically about "+owner+"'s personal style.\n7. **CTA** — \"Ready to talk?\" → /contact/.\n\n**Schema:** Person + Organization.";
+    case"services":return"**Sections:**\n1. **Page Header** — H1 + 150-word intro paragraph. Breadth of offerings + who they're for.\n2. **Service Grid** — 3-column cards. Icon + name (H3) + 2-sentence description + CTA button → /contact/.\n"+((c.services&&c.services.length)?"**Services to include:** "+c.services.map(s=>s.name||"—").join(", ")+"\n":"")+"3. **Comparison Helper** — \"If you're [scenario A], start with [service].\" Reduces decision paralysis.\n4. **Process Section** — Same 4-step flow as homepage.\n5. **CTA Section** — \"Not sure? Let's figure it out.\" → /contact/.\n\n**Schema:** Service per card + BreadcrumbList.";
+    case"contact":return"**Sections:**\n1. **Hero** — Welcoming photo of "+owner+". Headline: \"Let's Talk.\"\n2. **Contact Methods Grid** — 4 cards: Phone"+(c.phone?" ("+c.phone+")" :"")+" / Email / "+(c.address?"Visit ("+c.address+")":" Address")+" / Hours.\n3. **Inquiry Form** — First Name / Last Name / Email / Phone / Best Time to Call / Service Needed / Message (optional). CTA: \""+cta+"\".\n   Privacy line below button: \"Your info stays with us. We don't sell or share, ever.\"\n"+(c.address?"4. **Google Maps Embed** — Full-width iframe, centered on "+c.address+".\n":"")+"5. **Response Promise** — "+owner+"'s headshot + signed commitment to respond within 24 hours.\n6. **Trust Strip** — Repeat credential metrics before footer.\n\n**Schema:** LocalBusiness + ContactPage.";
+    case"geo":return"**City:** "+(p.city||"[city]")+"\n\n**Non-negotiable rules:**\n- 100% unique copy per geo page — never swap city name into a template.\n- Reference 2+ specific neighborhoods within "+(p.city||"the city")+".\n- Include school district, ZIP codes, what makes this city distinct.\n\n**Sections:**\n1. **Hero Banner** — Cinematic photo of "+(p.city||"the city")+". H1: \"Your "+(p.city||"City")+" "+(c.industry||"Service")+" — Local, Experienced, Ready.\"\n2. **Local Intro (200–300 words)** — Establish genuine local presence. Name neighborhoods, landmarks, commute routes.\n3. **Market Snapshot** — What draws customers to "+(p.city||"this city")+". Concrete details.\n4. **Services Here** — Offerings relevant to this city's needs.\n5. **Local Reviews** — 2–3 testimonials from "+(p.city||"this city")+" customers.\n6. **Local FAQs** — 4–5 city-specific Q&A with FAQPage schema.\n"+(c.address?"7. **Google Maps Embed** — Full-width, centered on "+c.address+".\n":"")+"8. **CTA** → /contact/.\n\n**Schema:** LocalBusiness with areaServed: \""+(p.city||"city")+"\" + FAQPage.";
+    case"reviews":return"**Sections:**\n1. **Aggregate Rating Hero** — Star rating, numeric average, total review count.\n2. **Video Testimonials** — 3–5 embedded 30–60 second videos from real clients.\n3. **Google Screenshot Cards** — 4–6 screenshots with \"View on Google\" links.\n4. **Pull-Quote Grid** — 6–8 featured quotes, 3-column, with star rating + attribution.\n5. **Platform Logos** — Google, Yelp, and industry-specific review sites.\n6. **CTA Band** → /contact/.\n\n**Schema:** Review + AggregateRating on Organization.";
+    case"blog":return"**Sections:**\n1. **Hub Header** — Headline, 50-word sub, author headshot + bio.\n2. **Featured Post** — Full-width card for latest/top post.\n3. **Category Filters** — All / Local / Tips / How-To / News.\n4. **Post Grid** — 3-column, 12 posts/page. Each card: image, category tag, title, date, read time, 1-sentence excerpt.\n5. **Subscribe Strip** — Email capture mid-grid.\n\n**Per-Post:** 1,000–1,500 words. H1 with keyword. 4+ H2s. 2+ internal links. Author bio. CTA \""+cta+"\" → /contact/.\n\n**Schema:** Blog + Article + Author (Person).";
+    case"faq":return"**Sections:**\n1. **Header** — Headline + search bar that filters questions live.\n2. **Category Anchor Nav** — Pricing / Process / Credentials / Industry-Specific.\n3. **Accordion Sections** — Each category: H2 + 5–8 Q&A pairs. Collapsed by default. Click to expand.\n4. **CTA Band** — \"Still have questions?\" → /contact/.\n\n**Schema:** FAQPage for every Q&A pair (enables Google rich results).";
+    case"pricing":return"**Approach:** "+c.pricingApproach+"\n\n**Sections:**\n1. **Header** — \"Transparent Pricing. No Surprises.\"\n2. **Pricing Display** — "+((c.pricingApproach==="public-tiers")?"3-tier cards. Middle tier visually emphasized ('Most Popular'). Each: tier name, price, audience fit, 6–10 feature bullets, CTA.":"Custom quote with typical investment ranges. Explain what influences cost.")+".\n3. **Universal Value-Adds** — 4–6 cards: what every customer gets regardless of tier.\n4. **Pricing FAQ** — 4–5 objection-handling Q&As.\n5. **Guarantee Strip** — Risk reversal / satisfaction promise.\n6. **CTA** → /contact/.\n\n**Schema:** Service/Product with offers + FAQPage.";
+    case"portfolio":return"**Sections:**\n1. **Featured Case Study** — Full-width hero. Challenge (75 words) + Approach (100 words) + hard-number Outcomes + client quote + gallery (5–8 images).\n2. **Filter Bar** — By category / year / type.\n3. **Project Grid** — 3-column, 12–24 cards. Each: image, hover state, title, 1-line description, tags.\n4. **Stats Bar** — Total projects, industries, years in business, repeat client rate.\n5. **CTA Band** → /contact/.\n\n**Schema:** CreativeWork per item + BreadcrumbList.";
+    default:return"**Sections:**\n1. **Header** — Brand-color band with H1 and 50-word intro paragraph.\n2. **Primary Content** — Purpose-driven copy, minimum 200 words per section.\n3. **CTA** — \""+cta+"\" → /contact/.\n\n**Schema:** WebPage.";
+  }
+}
+
+document.getElementById("generateBtn").addEventListener("click",()=>{
+  const critical=getCritical();if(critical.length){toast("Required fields missing",true);showStep(critical[0].step);return;}
+  const optional=getMissing().filter(f=>!f.critical);const ack=document.getElementById("ackBlank");
+  if(optional.length&&(!ack||!ack.checked)){toast("Acknowledge empty optional fields first",true);return;}
+  lastBrief=generateBrief();
+  document.getElementById("previewBox").textContent=lastBrief;
+  document.getElementById("previewWrap").style.display="block";
+  ["copyBtn","downloadBtn","downloadPdfBtn","downloadDocBtn"].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=false;});
+  toast("Brief generated");saveDraft(true);
+});
+
+document.getElementById("copyBtn").addEventListener("click",async()=>{
+  if(!lastBrief)return;
+  try{await navigator.clipboard.writeText(lastBrief);toast("Copied to clipboard");}
+  catch(e){const t=document.createElement("textarea");t.value=lastBrief;document.body.appendChild(t);t.select();document.execCommand("copy");document.body.removeChild(t);toast("Copied to clipboard");}
+});
+
+document.getElementById("downloadBtn").addEventListener("click",()=>{
+  if(!lastBrief)return;
+  const name=document.getElementById("businessName").value.trim()||"website-build-prompt";
+  const fn=slug(name)+"-website-build-prompt.md";
+  const blob=new Blob([lastBrief],{type:"text/markdown;charset=utf-8"});
+  const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=fn;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  toast("Downloaded "+fn);
+});
+
+function briefToHtml(){
+  if(!lastBrief)return"";
+  if(typeof marked!=="undefined"&&marked.parse){marked.use({breaks:false,gfm:true});return marked.parse(lastBrief);}
+  let h=lastBrief.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  h=h.replace(/^#### (.+)$/gm,"<h4>$1</h4>").replace(/^### (.+)$/gm,"<h3>$1</h3>").replace(/^## (.+)$/gm,"<h2>$1</h2>").replace(/^# (.+)$/gm,"<h1>$1</h1>").replace(/^---+$/gm,"<hr>").replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>").replace(/`([^`\n]+)`/g,"<code>$1</code>").replace(/^- (.+)$/gm,"<li>$1</li>").replace(/(<li>.*<\/li>\n?)+/g,m=>"<ul>"+m+"</ul>").replace(/\n\n/g,"</p><p>");
+  return"<p>"+h+"</p>";
+}
+function brandedHtml(body){
+  const bn=document.getElementById("businessName").value.trim()||"Website Build Brief";
+  const cp=document.getElementById("colorPrimaryHex").value||"#e11d2e";
+  return'<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>'+esc(bn)+' — Website Build Brief</title><style>@page{size:letter;margin:.75in}body{font-family:"Helvetica Neue",Arial,sans-serif;font-size:10.5pt;line-height:1.55;color:#1a1a1a;max-width:7.5in;margin:0 auto;padding:.4in .5in}.doc-header{border-bottom:3px solid '+cp+';padding-bottom:12pt;margin-bottom:24pt;display:flex;justify-content:space-between;flex-wrap:wrap}.doc-header .brand{font-size:16pt;font-weight:800;color:'+cp+'}.doc-header .meta{font-size:9pt;color:#666;text-transform:uppercase}h1{font-size:22pt;font-weight:800;color:'+cp+';margin:24pt 0 6pt}h2{font-size:16pt;font-weight:700;margin:22pt 0 6pt;padding-bottom:4pt;border-bottom:2px solid '+cp+'}h3{font-size:12.5pt;font-weight:700;margin:16pt 0 4pt}p{margin:6pt 0}ul,ol{margin:6pt 0 6pt 18pt}li{margin-bottom:3pt}code{background:#f4f4f4;padding:1pt 4pt;border-radius:2pt;font-size:9.5pt}table{border-collapse:collapse;width:100%;margin:10pt 0;font-size:9.5pt}th,td{border:1px solid #d0d0d0;padding:5pt 7pt;text-align:left}th{background:'+cp+';color:#fff;font-weight:700}tr:nth-child(even)td{background:#fafafa}hr{border:0;border-top:1px solid #ddd;margin:18pt 0}</style></head><body><div class="doc-header"><div class="brand">'+esc(bn)+'</div><div class="meta">Website Build Brief</div></div>'+body+'</body></html>';
+}
+
+document.getElementById("downloadPdfBtn").addEventListener("click",()=>{
+  if(!lastBrief)return;
+  const bn=document.getElementById("businessName").value.trim()||"website-build-brief";
+  const html=brandedHtml(briefToHtml());
+  const w=window.open("","_blank","noopener,noreferrer,width=900,height=1100");
+  if(!w){toast("Popup blocked — allow popups then retry",true);return;}
+  w.document.open();w.document.write(html);w.document.close();
+  try{w.document.title=slug(bn)+"-website-build-brief";}catch(e){}
+  const fire=()=>{try{w.focus();w.print();}catch(e){}};
+  if(w.document.readyState==="complete")setTimeout(fire,300);else w.addEventListener("load",()=>setTimeout(fire,300));
+  toast("PDF preview opened — choose 'Save as PDF'");
+});
+
+document.getElementById("downloadDocBtn").addEventListener("click",()=>{
+  if(!lastBrief)return;
+  const bn=document.getElementById("businessName").value.trim()||"website-build-brief";
+  const fn=slug(bn)+"-website-build-brief.doc";
+  const inner=briefToHtml();
+  const docHtml='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">'+brandedHtml(inner).replace(/^<!DOCTYPE html><html lang="en">/,"").replace(/<\/html>$/,"")+'</html>';
+  const blob=new Blob(["﻿",docHtml],{type:"application/msword"});
+  const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=fn;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  toast("Downloaded "+fn);
+});
+
+window.addEventListener("DOMContentLoaded",()=>{
+  const d=localStorage.getItem(DK);if(d){try{applyFormData(JSON.parse(d));}catch(e){}}
+  showStep(1);
+});
+</script>
+</body>
+</html>
