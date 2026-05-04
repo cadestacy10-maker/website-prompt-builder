@@ -593,7 +593,7 @@ const SCH={
   event:["LocalBusiness","Organization","Event","Review","Service"],
   other:["Organization","LocalBusiness"]
 };
-function esc(s){if(!s&&s!==0)return"";return String(s).replace(/[&<>"']/g,c=({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);}
+function esc(s){if(!s&&s!==0)return"";var map={"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"};return String(s).replace(/[&<>"']/g,function(ch){return map[ch];});}
 function slug(s){return s.toLowerCase().replace(/[^\w\s-]/g,"").trim().replace(/\s+/g,"-");}
 function buildPageCards(ind){
   const grid=document.getElementById("pagesGrid");grid.innerHTML="";
